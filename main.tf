@@ -1,12 +1,13 @@
-provider "aws" {
-  region = "eu-central-1"
-}
+provider "aws" {}
 
 variable vpc_cidr_block {}
 variable subnet_cidr_block {}
 variable avail_zone {}
 variable env-prefix {}
 variable my-ip {}
+variable instance_type {}
+variable public_key_location {}
+variable entry-script {}
 
 
 resource "aws_vpc" "myapp-vpc" {
@@ -59,6 +60,13 @@ resource "aws_security_group" "myapp-sg" {
     cidr_blocks = [ var.my-ip ]
   }
 
+  ingress {
+    from_port = 80
+    to_port = 80
+    protocol = "tcp"
+    cidr_blocks = [ "0.0.0.0/0" ]
+  }
+
     ingress {
     from_port = 8080
     to_port = 8080
@@ -76,5 +84,47 @@ resource "aws_security_group" "myapp-sg" {
 
   tags =  {
     Name: "${var.env-prefix}-sg"
+  }
+}
+
+data "aws_ami" "latest-amazon-linux-image" {
+  most_recent = true
+  owners = ["amazon"]
+  filter {
+    name = "name"
+    values = ["al2023-ami-*-x86_64"]
+  }
+  filter {
+    name = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
+output "aws_ami_id" {
+  value = data.aws_ami.latest-amazon-linux-image.id
+}
+
+output "ec2_public_ip" {
+  value = aws_instance.myapp-server.public_ip
+}
+
+resource "aws_key_pair" "ssh-key" {
+  key_name = "server-key"
+  public_key = file(var.public_key_location)
+}
+
+resource "aws_instance" "myapp-server" {
+  ami = data.aws_ami.latest-amazon-linux-image.id
+  instance_type = var.instance_type
+
+  subnet_id = aws_subnet.myapp-vpc-subnet-1.id
+  vpc_security_group_ids = [ aws_security_group.myapp-sg.id ]
+  availability_zone = var.avail_zone
+  associate_public_ip_address = true
+  key_name = aws_key_pair.ssh-key.key_name
+
+  user_data = file(var.entry-script)
+  tags = {
+    Name = "${var.env-prefix}-server"
   }
 }
