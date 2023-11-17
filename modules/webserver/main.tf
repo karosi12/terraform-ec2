@@ -68,7 +68,7 @@ resource "aws_instance" "myapp-server" {
 
   user_data = file("entry-script.sh")
 
-  /** 
+  /**
   connection {
     type = "ssh"
     host = self.public_ip
@@ -81,13 +81,16 @@ resource "aws_instance" "myapp-server" {
     destination = "/home/ec2-user/entry-script.sh"
   }
   provisioner "remote-exec" {
-    script = file("entry-script.sh")
+    inline = [
+      "./entry-script.sh"
+    ]
   }
 
   provisioner "local-exec" {
     command = "curl ${self.public_ip}"
   }
   */
+  
   tags = {
     Name = "${var.env-prefix}-server"
   }
