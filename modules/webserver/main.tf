@@ -49,8 +49,6 @@ data "aws_ami" "latest-amazon-linux-image" {
   }
 }
 
-
-
 resource "aws_key_pair" "ssh-key" {
   key_name = "server-key"
   public_key = file(var.public_key_location)
@@ -59,39 +57,33 @@ resource "aws_key_pair" "ssh-key" {
 resource "aws_instance" "myapp-server" {
   ami = data.aws_ami.latest-amazon-linux-image.id
   instance_type = var.instance_type
-
   subnet_id = var.subnet_id
   vpc_security_group_ids = [ aws_security_group.myapp-sg.id ]
   availability_zone = var.avail_zone
   associate_public_ip_address = true
   key_name = aws_key_pair.ssh-key.key_name
+  # count = 3
 
-  user_data = file("entry-script.sh")
+  # user_data = file("entry-script.sh")
 
-  /**
-  connection {
-    type = "ssh"
-    host = self.public_ip
-    user = "ec2-user"
-    private_key = file(var.private_key_location)
+  
+  tags = {
+    Name = "${var.env-prefix}-server-1"
   }
+}
 
-  provisioner "file" {
-    source = "entry-script.sh"
-    destination = "/home/ec2-user/entry-script.sh"
-  }
-  provisioner "remote-exec" {
-    inline = [
-      "./entry-script.sh"
-    ]
+
+  /** 
+  Execute ansible playbook
+
+resource "null_resource" "configure_server" {
+  triggers = {
+    trigger = aws_instance.myapp-server.public_ip
   }
 
   provisioner "local-exec" {
-    command = "curl ${self.public_ip}"
-  }
-  */
-  
-  tags = {
-    Name = "${var.env-prefix}-server"
+    working_dir = "/Users/pro/Documents/devops/ansible/ansible-lesson"
+    command = "ansible-playbook --inventory ${aws_instance.myapp-server.public_ip}, --private-key ${var.ssh_key_private} --user ${var.linux_user} deploy-docker.yaml"
   }
 }
+  */

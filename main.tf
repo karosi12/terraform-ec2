@@ -3,6 +3,7 @@ provider "aws" {}
 
 resource "aws_vpc" "myapp-vpc" {
   cidr_block = var.vpc_cidr_block
+  enable_dns_hostnames = true
   tags = {
     Name: "${var.env-prefix}-vpc"
   }
@@ -27,5 +28,6 @@ module "myapp-server" {
   image-name = var.image-name
   private_key_location = var.private_key_location
   public_key_location = var.public_key_location
+  ssh_key_private = var.ssh_key_private
+  linux_user = var.linux_user
 }
-
