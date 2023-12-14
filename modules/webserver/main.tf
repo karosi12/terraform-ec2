@@ -75,6 +75,7 @@ resource "aws_instance" "myapp-server" {
 
   /** 
   Execute ansible playbook
+  */
 
 resource "null_resource" "configure_server" {
   triggers = {
@@ -86,4 +87,3 @@ resource "null_resource" "configure_server" {
     command = "ansible-playbook --inventory ${aws_instance.myapp-server.public_ip}, --private-key ${var.ssh_key_private} --user ${var.linux_user} deploy-docker.yaml"
   }
 }
-  */
